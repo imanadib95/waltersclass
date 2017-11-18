@@ -43,13 +43,76 @@ import org.json.JSONObject;
 //import java.security.InvalidKeyException;
 //import java.security.NoSuchAlgorithmException;
 
+class CandleStick{
+	float open;
+	float close;
+	float high;
+	float low;
+	String timeStamp;
+	CandleStick(PriceData [] prices, int arrayLength){
+		//Set timestamp
+		timeStamp = prices[0].getLastUpdateTime();
+		// Initialize candlestick parameters
+		high = prices[0].ask;
+		low = prices[0].ask;
+		open = prices[0].ask;
+		close = prices[arrayLength-1].ask;
+		// Sort through array of priceData points to find actual high and low
+		for (int i= 0; i<arrayLength; i++ ){
+	//	System.out.println(prices[i].ask+" >>>>>>>"+i);
+			if(high<prices[i].ask)
+				high = prices[i].ask;
+			else if(low>prices[i].ask)
+				low=prices[i].ask;
+			}
+
+	}
+	
+	public String getCandleStickData(){
+		return (timeStamp+"\topen:\t"+open+"\thigh:\t"+high+"\tlow:\t"+low+"\tclose:\t"+close);
+	}
+	public void printCandleStickData(){
+		System.out.print(timeStamp+"\topen:\t"+open+"\thigh:\t"+high+"\tlow:\t"+low+"\tclose:\t"+close);
+	}
+}
+
+
+
 
 class PriceData{
-	public float bid = 0;
-	public float ask = 0;
-	public String state = "";
-	public int last_updated = 0;
 	
+	public float bid;
+	public float ask;
+	public String state;
+	public int last_updated;
+	//Constructor
+	PriceData(JSONObject priceJSON){
+		ask = priceJSON.getJSONObject("BTC-USD").getFloat("ask");
+		bid = priceJSON.getJSONObject("BTC-USD").getFloat("bid");
+		state = priceJSON.getJSONObject("BTC-USD").getString("state");
+		last_updated = priceJSON.getJSONObject("BTC-USD").getInt("last_updated");
+	}
+	
+	
+	public String getLastUpdateTime(){
+		Date date = new Date(last_updated * 1000L);
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
+		String formatted = format.format(date);
+		return formatted;
+	}
+	public void printBTCData(){
+		System.out.println("Current market info");
+		System.out.print("ask: \t");
+		System.out.print(ask);
+		System.out.print("\tbid: \t");
+		System.out.print(bid);
+		System.out.print("\tstate: \t");
+		System.out.print(state);
+		System.out.print("\tlast updated: \t");
+		System.out.println(getLastUpdateTime());
+
+		
+	}
 }
 
 
@@ -61,75 +124,34 @@ public class HttpURLConnectionExample {
 
 
 		HttpURLConnectionExample http = new HttpURLConnectionExample();
-		float[] a = new float[10];
-		for (int i= 0; i<10; i = i +1 ){
-			Thread.sleep(5 * 1000);
+		PriceData[] prices = new PriceData[5];
+		for (int i= 0; i<prices.length; i = i +1 ){
 			System.out.println("Testing 1 - Send Http GET request");
-			;JSONObject priceJSON= http.sendGet("https://api.whaleclub.co/v1/price/BTC-USD", "Bearer ab7d8bd3-98b5-438a-8d38-0247ee9578d0");
-			PriceData btcPrice = new PriceData();
-			btcPrice.ask = priceJSON.getJSONObject("BTC-USD").getFloat("ask");
-			btcPrice.bid = priceJSON.getJSONObject("BTC-USD").getFloat("bid");
-			btcPrice.state = priceJSON.getJSONObject("BTC-USD").getString("state");
-			btcPrice.last_updated = priceJSON.getJSONObject("BTC-USD").getInt("last_updated");
-			
-//			String epochtime = String.valueOf((btcPrice.last_updated)*1000);
-//			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-//			Date date = df.parse(epochtime);
-//			System.out.println(date+">>>>>>>>>>>yes");
-	
+			JSONObject priceJSON= http.sendGet("https://api.whaleclub.co/v1/price/BTC-USD", "Bearer ab7d8bd3-98b5-438a-8d38-0247ee9578d0");
+			prices[i] = new PriceData(priceJSON);
 		//Print data
+			prices[i].printBTCData();
+//		Posting Code
+//		int threshold = 1;
+//		// Create new bid if surpassed
+//		
+//		if(btcPrice.ask<threshold){
+//			System.out.println("Opening Position");
+//			http.sendPost();
+//			}
+//			else{
+//				System.out.println("No new position for you");
+//			}
+//			System.out.println("\nTesting 2 - Send Http POST request");
+//			askPrices[i]=btcPrice.ask;
 			
-			System.out.println("Current BTC info");
-			System.out.print("ask: \t");
-			System.out.print(btcPrice.ask);
-			System.out.print("\tbid: \t");
-			System.out.print(btcPrice.bid);
-			System.out.print("\tstate: \t");
-			System.out.print(btcPrice.state);
-			System.out.print("\tlast updated: \t");
-			System.out.println(btcPrice.last_updated);
-		
-		
-			
-			
-			
-				
-		int threshold = 1;
-		// Create new bid if surpassed
-		
-		if(btcPrice.ask<threshold){
-			System.out.println("Opening Position");
-			http.sendPost();
-			}
-			else{
-				System.out.println("No new position for you");
-			}
-			System.out.println("\nTesting 2 - Send Http POST request");
-			a[i]=btcPrice.ask;
+			Thread.sleep(5 * 1000);
 	}
 		
-		float high;
-		float low;
-		float open;
-		float close;
-		high = a[0];
-		low = a[0];
-		open = a[0];
-		close = a[9];
+
+		CandleStick testStick = new CandleStick(prices, prices.length);
+		testStick.printCandleStickData();
 		
-		for (int g= 0; g<10; g++ ){
-		System.out.println(a[g]+" >>>>>>>"+g);
-			if(high<a[g])
-				high = a[g];
-			else if(low>a[g])
-				low=a[g];
-			}
-		
-		System.out.println();
-		System.out.println(open+" open");
-		System.out.println(high+" high");
-		System.out.println(low+" low");
-		System.out.println(close+" close");
 		}
 		
 

@@ -10,38 +10,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
-import java.util.TimeZone;
-
-
-
-
-//import java.util.Scanner;
-//import org.json.*;
 import javax.net.ssl.HttpsURLConnection;
 
-
-
-
-
-
-
-//import org.json.JSONException;
 import org.json.JSONObject;
-//import java.util.Arrays;
-//import java.util.Collections;
-//import java.io.BufferedInputStream;
-//import java.io.BufferedReader;
-//import java.io.IOException;
-//import java.io.InputStream;
-//import java.io.InputStreamReader;
-//import java.io.UnsupportedEncodingException;
-//import java.net.HttpURLConnection;
-//import java.net.MalformedURLException;
-//import java.net.ProtocolException;
-//import java.net.URL;
-//import java.security.InvalidKeyException;
-//import java.security.NoSuchAlgorithmException;
+
 
 class CandleStick{
 	float open;
@@ -49,6 +21,7 @@ class CandleStick{
 	float high;
 	float low;
 	String timeStamp;
+
 	CandleStick(PriceData [] prices, int arrayLength){
 		//Set timestamp
 		timeStamp = prices[0].getLastUpdateTime();
@@ -59,12 +32,15 @@ class CandleStick{
 		close = prices[arrayLength-1].ask;
 		// Sort through array of priceData points to find actual high and low
 		for (int i= 0; i<arrayLength; i++ ){
+
 	//	System.out.println(prices[i].ask+" >>>>>>>"+i);
 			if(high<prices[i].ask)
 				high = prices[i].ask;
 			else if(low>prices[i].ask)
 				low=prices[i].ask;
 			}
+		
+
 
 	}
 	
@@ -96,7 +72,7 @@ class PriceData{
 	
 	public String getLastUpdateTime(){
 		Date date = new Date(last_updated * 1000L);
-		DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
 		String formatted = format.format(date);
 		return formatted;
 	}
@@ -118,43 +94,149 @@ class PriceData{
 
 public class HttpURLConnectionExample {
 
+
+	
 	private final String USER_AGENT = "walter";
 
 	public static void main(String[] args) throws Exception {
 
+		float prevOpen = 0;
+		float prevClose = 0;
+		float prevHigh = 0;
+		float prevLow = 0;
+	
+		
+		float open;
+		float close;
+		float high;
+		float low;
+		float bodyskew;
+		float longenough;
+		float length;
+		float topthird;
+		float bottomthird;
+		float body;
+		boolean isbodygood = false;
+		boolean iswithinrange = false;
+		boolean islongenough = false;
 
 		HttpURLConnectionExample http = new HttpURLConnectionExample();
-		PriceData[] prices = new PriceData[5];
-		for (int i= 0; i<prices.length; i = i +1 ){
-			System.out.println("Testing 1 - Send Http GET request");
-			JSONObject priceJSON= http.sendGet("https://api.whaleclub.co/v1/price/BTC-USD", "Bearer ab7d8bd3-98b5-438a-8d38-0247ee9578d0");
-			prices[i] = new PriceData(priceJSON);
-		//Print data
-			prices[i].printBTCData();
-//		Posting Code
-//		int threshold = 1;
-//		// Create new bid if surpassed
-//		
-//		if(btcPrice.ask<threshold){
-//			System.out.println("Opening Position");
-//			http.sendPost();
-//			}
-//			else{
-//				System.out.println("No new position for you");
-//			}
-//			System.out.println("\nTesting 2 - Send Http POST request");
-//			askPrices[i]=btcPrice.ask;
-			
-			Thread.sleep(5 * 1000);
-	}
+		PriceData[] prices = new PriceData[4];
 		
+		for (int candleStickRuns = 0; candleStickRuns < 3; candleStickRuns++){
+		
+			for (int i= 0; i<prices.length; i = i +1 ){
+				System.out.println("Testing 1 - Send Http GET request");
+				JSONObject priceJSON= http.sendGet("https://api.whaleclub.co/v1/price/BTC-USD", "Bearer 144177e8-ef1c-4826-83d2-8d9f852ef3b6");
+				prices[i] = new PriceData(priceJSON);
+			//Print data
+				prices[i].printBTCData();
+	//		Posting Code
 
-		CandleStick testStick = new CandleStick(prices, prices.length);
-		testStick.printCandleStickData();
+	//		// Create new bid if surpassed
+	//		
+	//		if(btcPrice.ask<threshold){
+	//			System.out.println("Opening Position");
+	//			http.sendPost();
+	//			}
+	//			else{
+	//				System.out.println("No new position for you");
+	//			}
+	//			System.out.println("\nTesting 2 - Send Http POST request");
+	//			askPrices[i]=btcPrice.ask;
+				
+				Thread.sleep(5 * 1000);
+		}
+			
+	
+			CandleStick testStick = new CandleStick(prices, prices.length);
+			testStick.printCandleStickData();
+	
+			bodyskew = 1;
+			longenough = 0;
+			high = prices[0].ask;
+			low = prices[0].ask;
+			open = prices[0].ask;
+			close = prices[prices.length-1].ask;
+			for (int i= 0; i<prices.length; i++ ){
+	
+		//	System.out.println(prices[i].ask+" >>>>>>>"+i);
+				if(high<prices[i].ask)
+					high = prices[i].ask;
+				else if(low>prices[i].ask)
+					low=prices[i].ask;
+				}
+			
+			length = high - low; 
+			body = Math.abs(open - close);
+			topthird = high - (length*bodyskew);
+			bottomthird = low + length*bodyskew;
+			
+			//Red or green
+			float bodyhigh = 0;
+			float bodylow = 0;
+			
+				if (open >= close)
+				{	bodyhigh = open;
+				bodylow = close;
+				}
+				else
+				{
+					bodyhigh = close;
+					bodylow = open;
+				}
+			
+			
+			//Criteria 1 check
+			if ((open >= topthird && close >= topthird))
+				{
+					isbodygood = true; 
+					
+				}
+			else if ((open <= bottomthird && close <= bottomthird))
+				{
+					isbodygood = true; 
+					
+				}
+			
+			//Criteria 2 check
+			float ps = 0;
+			ps =  prevHigh - prevLow;
+			for (int g = 2; g <=5; g++)
+				if ((prevHigh - prevLow)>ps)
+					ps =  prevHigh - prevLow;
+			
+			if (length > longenough*ps)
+				islongenough = true; 
+			
+	
+			
+			//Criteria 3 check
+			if(bodyhigh < prevHigh && bodylow > prevLow)
+				iswithinrange= true; 
+			
+			if(isbodygood && iswithinrange && islongenough || prices.length>1){
+			//if(isbodygood && iswithinrange && islongenough){
+			System.out.println("\nOpening Position");
+			http.sendPost();
+			}
+			else{
+				System.out.println("\nNo new position for you");
+			}
+			
+			prevOpen = open;
+			prevClose = close;
+			prevHigh = high;
+			System.out.println(prevHigh +"prevhigh");
+			prevLow = low;
+			System.out.println(prevLow +"prevlow");
+			float risk = 0;
+			risk = prevHigh - prevLow;
 		
 		}
+	}
 		
-
+	
 	
 	
 	
@@ -200,7 +282,7 @@ public class HttpURLConnectionExample {
 		
 		}
 	
-	
+
 
 		
 	
@@ -213,6 +295,10 @@ public class HttpURLConnectionExample {
 	// HTTP POST request
 	public void sendPost() throws Exception {
 
+		
+///////////////////////////////////////////////
+
+///////////////////////////////////////////////
 		String HttpsURLConnection = "https://api.whaleclub.co/v1/position/new";
 
 		URL url = new URL(HttpsURLConnection);
@@ -222,11 +308,25 @@ public class HttpURLConnectionExample {
 		con.setRequestMethod("POST");
 		con.setRequestProperty("User-Agent", USER_AGENT);
 		con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-		con.setRequestProperty("Authorization", "Bearer ab7d8bd3-98b5-438a-8d38-0247ee9578d0");
+		con.setRequestProperty("Authorization", "Bearer 144177e8-ef1c-4826-83d2-8d9f852ef3b6");
 		
-
-		String urlParameters = "direction=long&market=BTC-USD&leverage=1&size=100000000";
-		// Send post request
+		
+	
+	
+		//Object stoploss;
+		float stoploss = 88;
+		//stoploss = prevLow;
+		float takeprofit = 999999;
+		//float takeprofit = ((selltop*risk)+prevHigh);
+		
+		//String urlParameters = "direction=long&market=BTC-USD&leverage=1&size=100000000&stop_loss=prevLow&take_profit=((selltop*risk)+ask)";
+		String urlParameters = String.format("direction=long&market=BTC-USD&leverage=1&size=100000000&stop_loss=%1$f&take_profit=%2$f", stoploss, takeprofit);
+		
+		//String.format("%d", 93);
+		//float low = prices[0].ask;
+	
+		
+		//Send post request
 		con.setDoOutput(true);
 		con.setDoInput(true);
 		DataOutputStream wr = new DataOutputStream(con.getOutputStream());
